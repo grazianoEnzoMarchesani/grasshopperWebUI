@@ -110,17 +110,61 @@ html_content = """
 
         function animate() {
             requestAnimationFrame(animate);
-            if (controls) controls.update();
+            if (controls) {
+                controls.update(); // Aggiorna i controlli in ogni frame
+            }
             renderer.render(scene, camera);
         }
         
-        function updateGeometry(geometryData) {
-            console.log("Dati geometria ricevuti:", {
-                numVertici: geometryData.vertices.length,
-                numFacce: geometryData.faces.length,
-                numColori: geometryData.colors.length
-            });
+        let lastGeometryUpdate = 0;
+        let geometryUpdateInterval = 500; // Aggiorna la geometria ogni 500ms
+        let isDragging = false;
 
+        // Aggiungi gestione eventi di interazione
+        function setupInteractionEvents() {
+            renderer.domElement.addEventListener('mousedown', () => {
+                isDragging = true;
+            });
+            
+            renderer.domElement.addEventListener('mouseup', () => {
+                isDragging = false;
+            });
+            
+            renderer.domElement.addEventListener('mouseleave', () => {
+                isDragging = false;
+            });
+        }
+
+        // Modifica la funzione pollGeometry
+        function pollGeometry() {
+            // Non aggiornare se l'utente sta interagendo con la vista
+            if (isDragging) return;
+            
+            // Controlla se è passato abbastanza tempo dall'ultimo aggiornamento
+            const now = Date.now();
+            if (now - lastGeometryUpdate < geometryUpdateInterval) return;
+            
+            fetch('/get_geometry')
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status !== 'error') {
+                        updateGeometry(data);
+                        lastGeometryUpdate = now;
+                    }
+                });
+        }
+
+        // Modifica l'intervallo di polling
+        setInterval(pollGeometry, 100);
+
+        function updateGeometry(geometryData) {
+            // Se l'utente sta interagendo, ignora l'aggiornamento
+            if (isDragging) return;
+
+            // Salva la posizione e rotazione corrente della camera
+            const currentCameraPosition = camera.position.clone();
+            const currentCameraRotation = camera.rotation.clone();
+            
             if (currentMesh) {
                 scene.remove(currentMesh);
             }
@@ -135,7 +179,6 @@ html_content = """
             const indices = [];
             geometryData.faces.forEach(face => {
                 if (face.length === 4) {
-                    // Converte quad in due triangoli
                     indices.push(face[0], face[1], face[2]);
                     indices.push(face[2], face[3], face[0]);
                 } else if (face.length === 3) {
@@ -148,7 +191,6 @@ html_content = """
             const colors = new Float32Array(geometryData.colors.flat());
             geometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
             
-            // Calcola le normali se non sono fornite
             if (geometryData.normals) {
                 const normals = new Float32Array(geometryData.normals.flat());
                 geometry.setAttribute('normal', new THREE.BufferAttribute(normals, 3));
@@ -165,22 +207,34 @@ html_content = """
             
             currentMesh = new THREE.Mesh(geometry, material);
             
-            // Centra e scala la geometria
+            // Centra la geometria
             geometry.computeBoundingSphere();
             const center = geometry.boundingSphere.center;
             const radius = geometry.boundingSphere.radius;
             
             currentMesh.position.set(-center.x, -center.y, -center.z);
             
-            // Imposta la camera
-            camera.position.set(radius * 2, radius * 2, radius * 2);
-            camera.lookAt(0, 0, 0);
-            
-            // Aggiungi controlli orbitali se non esistono
+            // Configura i controlli OrbitControls solo la prima volta
             if (!controls) {
                 controls = new THREE.OrbitControls(camera, renderer.domElement);
                 controls.enableDamping = true;
                 controls.dampingFactor = 0.05;
+                controls.enableZoom = true;
+                controls.enablePan = true;
+                controls.enableRotate = true;
+                controls.minDistance = radius * 0.5;
+                controls.maxDistance = radius * 10;
+                
+                // Imposta la posizione iniziale della camera solo la prima volta
+                camera.position.set(radius * 2, radius * 2, radius * 2);
+                camera.lookAt(0, 0, 0);
+                
+                // Inizializza gli eventi di interazione
+                setupInteractionEvents();
+            } else {
+                // Ripristina la posizione e rotazione della camera
+                camera.position.copy(currentCameraPosition);
+                camera.rotation.copy(currentCameraRotation);
             }
             
             scene.add(currentMesh);
@@ -189,19 +243,6 @@ html_content = """
         // Avvia il loop di rendering
         animate();
         
-        // Polling dei dati
-        function pollGeometry() {
-            fetch('/get_geometry')
-                .then(response => response.json())
-                .then(data => {
-                    if (data.status !== 'error') {
-                        updateGeometry(data);
-                    }
-                });
-        }
-        
-        setInterval(pollGeometry, 100);
-
         function updateServer(data) {
             fetch('/update', {
                 method: 'POST',
