@@ -1,4 +1,3 @@
-
 from flask import Flask, render_template_string, jsonify, request
 import webbrowser
 import threading
@@ -29,53 +28,180 @@ html_content = """
 <html>
 <head>
     <title>Grasshopper Interface</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
     <style>
         body { 
             font-family: Arial, sans-serif; 
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+        }
+        #controls { 
             padding: 20px;
-            max-width: 800px;
-            margin: 0 auto;
             background-color: #f5f5f5;
         }
         .control { 
-            margin: 20px 0;
-            padding: 20px;
+            margin: 10px 0;
+            padding: 15px;
             background-color: white;
             border-radius: 8px;
             box-shadow: 0 2px 4px rgba(0,0,0,0.1);
         }
-        label {
-            display: block;
-            margin-bottom: 10px;
-            font-weight: bold;
-        }
-        input[type="range"] {
+        #viewer {
+            flex-grow: 1;
             width: 100%;
-            margin: 10px 0;
-        }
-        select {
-            width: 100%;
-            padding: 8px;
-            border-radius: 4px;
-            border: 1px solid #ddd;
         }
     </style>
 </head>
 <body>
-    <div class="control">
-        <label>Slider: <span id="slider-value">50</span></label>
-        <input type="range" id="slider" min="0" max="100" value="50">
+    <div id="controls">
+        <div class="control">
+            <label>Slider: <span id="slider-value">50</span></label>
+            <input type="range" id="slider" min="0" max="100" value="50">
+        </div>
+        <div class="control">
+            <label>Shape:</label>
+            <select id="shape-select">
+                <option value="circle">Circle</option>
+                <option value="rectangle">Rectangle</option>
+                <option value="polygon">Polygon</option>
+            </select>
+        </div>
     </div>
-    <div class="control">
-        <label>Shape:</label>
-        <select id="shape-select">
-            <option value="circle">Circle</option>
-            <option value="rectangle">Rectangle</option>
-            <option value="polygon">Polygon</option>
-        </select>
-    </div>
+    <div id="viewer"></div>
 
     <script>
+        // Inizializzazione Three.js
+        const scene = new THREE.Scene();
+        scene.background = new THREE.Color(0xf0f0f0);
+        
+        const viewer = document.getElementById('viewer');
+        const camera = new THREE.PerspectiveCamera(75, viewer.clientWidth / viewer.clientHeight, 0.1, 1000);
+        const renderer = new THREE.WebGLRenderer({ antialias: true });
+        
+        renderer.setSize(viewer.clientWidth, viewer.clientHeight);
+        viewer.appendChild(renderer.domElement);
+        
+        // Luci
+        const ambientLight = new THREE.AmbientLight(0x404040, 1);
+        scene.add(ambientLight);
+        
+        const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
+        directionalLight.position.set(1, 1, 1);
+        scene.add(directionalLight);
+        
+        const directionalLight2 = new THREE.DirectionalLight(0xffffff, 0.5);
+        directionalLight2.position.set(-1, -1, -1);
+        scene.add(directionalLight2);
+        
+        let currentMesh = null;
+        let controls = null;
+
+        // Gestione ridimensionamento
+        window.addEventListener('resize', () => {
+            const width = viewer.clientWidth;
+            const height = viewer.clientHeight;
+            camera.aspect = width / height;
+            camera.updateProjectionMatrix();
+            renderer.setSize(width, height);
+        });
+
+        function animate() {
+            requestAnimationFrame(animate);
+            if (controls) controls.update();
+            renderer.render(scene, camera);
+        }
+        
+        function updateGeometry(geometryData) {
+            console.log("Dati geometria ricevuti:", {
+                numVertici: geometryData.vertices.length,
+                numFacce: geometryData.faces.length,
+                numColori: geometryData.colors.length
+            });
+
+            if (currentMesh) {
+                scene.remove(currentMesh);
+            }
+            
+            const geometry = new THREE.BufferGeometry();
+            
+            // Vertici
+            const vertices = new Float32Array(geometryData.vertices.flat());
+            geometry.setAttribute('position', new THREE.BufferAttribute(vertices, 3));
+            
+            // Facce - gestisci sia triangoli che quad
+            const indices = [];
+            geometryData.faces.forEach(face => {
+                if (face.length === 4) {
+                    // Converte quad in due triangoli
+                    indices.push(face[0], face[1], face[2]);
+                    indices.push(face[2], face[3], face[0]);
+                } else if (face.length === 3) {
+                    indices.push(...face);
+                }
+            });
+            geometry.setIndex(new THREE.BufferAttribute(new Uint16Array(indices), 1));
+            
+            // Colori
+            const colors = new Float32Array(geometryData.colors.flat());
+            geometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+            
+            // Calcola le normali se non sono fornite
+            if (geometryData.normals) {
+                const normals = new Float32Array(geometryData.normals.flat());
+                geometry.setAttribute('normal', new THREE.BufferAttribute(normals, 3));
+            } else {
+                geometry.computeVertexNormals();
+            }
+            
+            const material = new THREE.MeshPhongMaterial({
+                vertexColors: true,
+                side: THREE.DoubleSide,
+                flatShading: false,
+                shininess: 30
+            });
+            
+            currentMesh = new THREE.Mesh(geometry, material);
+            
+            // Centra e scala la geometria
+            geometry.computeBoundingSphere();
+            const center = geometry.boundingSphere.center;
+            const radius = geometry.boundingSphere.radius;
+            
+            currentMesh.position.set(-center.x, -center.y, -center.z);
+            
+            // Imposta la camera
+            camera.position.set(radius * 2, radius * 2, radius * 2);
+            camera.lookAt(0, 0, 0);
+            
+            // Aggiungi controlli orbitali se non esistono
+            if (!controls) {
+                controls = new THREE.OrbitControls(camera, renderer.domElement);
+                controls.enableDamping = true;
+                controls.dampingFactor = 0.05;
+            }
+            
+            scene.add(currentMesh);
+        }
+
+        // Avvia il loop di rendering
+        animate();
+        
+        // Polling dei dati
+        function pollGeometry() {
+            fetch('/get_geometry')
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status !== 'error') {
+                        updateGeometry(data);
+                    }
+                });
+        }
+        
+        setInterval(pollGeometry, 100);
+
         function updateServer(data) {
             fetch('/update', {
                 method: 'POST',
@@ -175,6 +301,17 @@ class WebInterface:
         @self.app.route('/favicon.ico')
         def favicon():
             return '', 204  # Restituisce una risposta vuota con status code 204 (No Content)
+
+        @self.app.route('/get_geometry')
+        def get_geometry():
+            try:
+                geometry_path = os.path.join(tempfile.gettempdir(), 'gh_geometry_data.json')
+                if os.path.exists(geometry_path):
+                    with open(geometry_path, 'r') as f:
+                        return jsonify(json.load(f))
+                return jsonify({"status": "error", "message": "No geometry data"})
+            except Exception as e:
+                return jsonify({"status": "error", "message": str(e)})
 
     def stop_server(self):
         """Ferma il server se è in esecuzione"""
