@@ -8,6 +8,67 @@ The development of this system was driven by the necessity to address limitation
 
 The system's architecture has been implemented in Python, chosen for its computational capabilities. A local web server manages the bidirectional communication between Grasshopper and the web interface, where native geometries are converted to Three.js format for optimized web visualization. The interface has been developed with responsive design principles, featuring an advanced 3D visualization system with orbital controls for comprehensive model exploration.
 
+
+## Version 0.2.0 Changelog
+
+### Architecture Changes
+- Decoupled server functionality into separate components:
+  - Server creation component
+  - HTML update component
+  - Web page opening component
+- Implemented volatile web page serving (no physical file storage)
+- Introduced dual JSON system for component state management:
+  - Write JSON: Controls state updates from Grasshopper
+  - Read JSON: Handles user input from web interface
+
+### New Custom Input Components
+Introduced a suite of customizable input controls with the following features:
+- Configurable CSS styling
+- Label support
+- Minimum and maximum value constraints
+- Unique ID system
+
+New components include:
+1. Slider Control
+   - Single value slider with continuous input
+2. Range Slider Control
+   - Dual-handle slider for range selection
+3. Number Input Control
+   - Direct numerical input field
+4. Stepper Control
+   - Increment/decrement controls for precise value adjustment
+
+### Component Properties
+Each input component supports:
+- Custom labeling
+- Value constraints (min/max)
+- Unique identifier
+- Custom styling through CSS
+- Real-time value updates
+
+### Technical Details
+- Compatible with Rhino 8
+- Built with Python 3
+- Uses native Python libraries for server functionality
+- Real-time bidirectional communication between Grasshopper and web interface
+
+### Requirements
+- Rhino 8
+- Python 3.x
+- Web browser with JavaScript enabled
+
+### Usage
+1. Add server component to your Grasshopper definition
+2. Connect desired input components
+3. Configure component parameters
+4. Access the interface through your web browser
+
+### Notes
+- Web interface runs in memory without creating physical files
+- Component states are managed through JSON data exchange
+- All components support real-time updates
+
+
 ## Current Features
 
 The Three.js-based visualization system has been equipped with real-time geometry updates and responsive controls. The implementation includes support for colored meshes and normals, ensuring detailed model representation. Interactive controls, such as sliders and dropdown menus, have been integrated to facilitate parameter manipulation within the Grasshopper environment.
