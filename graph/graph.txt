@@ -1,0 +1,35 @@
+https://www.plantuml.com/plantuml/uml/TPHDSzem48Rl_XKgbvAP1ay-qivmIWi994C-1i8mFNbaUx7Lof97AqFfhwya6ni1FQ4L-pwlLhloFMggT5Nmu1CJ2QzI8BdM9Gx3KD7j86Cwh-8AGILIQ11waCWYB3aLLdE9EkKi3aUtb-zsQ_ao2mkA6fJPYaQoAAMmcjBoWzdtds_BZsZrz36DPW-JXzTn_o88HePBcG3LpnH5p6LPWlf2UfCkwfbmdZCXmydKhc_6f90fS2Oo0cB3b1I5iUbT1ArbFmDPJAb8kOFP2BJQHNczDIXt5lI-qxaKTbMd8Z7eVIun5Mz08PF28syeh-152gQbHRimAbnyoctoa32XGQrf0iG9y1IvB5EgeILMBZm1rbb83gxd7151RK0jG5Ub4TLHX3RqYE4Zf_ZRnYk8IPtM7RNdjITMSciocjmVTMIberp90i97fc0j_uGBkgQAkRFYVsdZs7Ne6QMmxScZjaEcF3huXNMrpuktL_ixsVV4_ajGIqKp0_HuhL47RRVEKv-EUd803ZwJiRLQSrDcC0VkJwS_NLTqI1OWKjpF3alSGGtdH7aqFLVnNchVbvAyQwRJUaO7DtRjB1MZdFs5rdVNEFecnnTpRJtf1iuEfTNxqzFr_SPvMk4MuaxScBPv_kpT3aat1pJHJ8epDbvnTwQuET3KhyiNd9Pr5pUgSAMO1ZogoRyJ_yLz7PBseIOv5HbWu-Zb-H-eRqDovZ5QktiGQLNmVm00
+
+
+@startuml
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Component.puml
+
+LAYOUT_WITH_LEGEND()
+
+Container(grasshopper, "Grasshopper", "Rhino/GH", "3D modeling environment")
+Component(geomHandler, "geometry_handler.py", "Python", "Handles 3D geometry conversion")
+Component(valueMonitor, "value_monitor.py", "Python", "Monitors interface values")
+Component(valueUpdate, "value_update.py", "Python", "Updates Grasshopper values")
+Component(serverSetup, "server_setup.py", "Python/Flask", "Web server interface")
+
+Container(browser, "Web Browser", "Chrome/Firefox/Safari", "User interface")
+
+ContainerDb(geomJson, "gh_geometry_data.json", "JSON", "Geometry data storage")
+ContainerDb(interfaceJson, "gh_interface_data.json", "JSON", "Interface values storage")
+
+' Data flows
+Rel(grasshopper, geomHandler, "1a: Sends geometric data")
+Rel(grasshopper, valueMonitor, "1b: Sends control values")
+
+Rel(geomHandler, geomJson, "2a: Serializes geometry")
+Rel(valueMonitor, interfaceJson, "2b: Saves interface values")
+
+Rel(serverSetup, browser, "3: Serves web interface")
+Rel(browser, serverSetup, "4: User interaction")
+
+Rel(serverSetup, geomJson, "5a: Reads geometry")
+Rel(serverSetup, interfaceJson, "5b: Reads/Writes values")
+
+Rel(valueMonitor, valueUpdate, "6: Monitors changes")
+Rel(valueUpdate, grasshopper, "7: Updates Grasshopper")
+@endumlnitor 

@@ -1,290 +1,78 @@
 from flask import Flask, render_template_string, jsonify, request
-import webbrowser
 import threading
 import socket
 import time
 import json
 import os
 import tempfile
+import requests
+
+# Input:
+#   html_content: stringa contenente l'HTML della pagina (da html_builder.py)
+#   restart: bool - Se True, riavvia il server (opzionale)
 
 # Usa la directory temporanea del sistema
 JSON_PATH = os.path.join(tempfile.gettempdir(), 'gh_interface_data.json')
+INSTANCE_PATH = os.path.join(tempfile.gettempdir(), 'gh_server_instance.json')
+HTML_CACHE_PATH = os.path.join(tempfile.gettempdir(), 'gh_html_cache.json')
 
-# Inizializza il file JSON se non esiste
 def init_json_file():
-    default_data = {
-        "slider_value": 50,
-        "shape": "circle",
-        "last_update": time.time()
-    }
-    if not os.path.exists(JSON_PATH):
+    """Inizializza il file JSON se non esiste"""
+    try:
+        current_data = {"controls": {}, "last_update": time.time()}
+        
+        if os.path.exists(JSON_PATH):
+            try:
+                with open(JSON_PATH, 'r') as f:
+                    content = f.read().strip()
+                    if content:
+                        data = json.loads(content)
+                        if isinstance(data, dict):
+                            current_data = data
+            except:
+                pass
+        
+        # Assicurati che la struttura sia corretta
+        if 'controls' not in current_data:
+            current_data['controls'] = {}
+        if 'last_update' not in current_data:
+            current_data['last_update'] = time.time()
+            
+        # Salva il file
         with open(JSON_PATH, 'w') as f:
-            json.dump(default_data, f)
-    return default_data
+            json.dump(current_data, f, indent=2)
+            
+        return current_data
+    except Exception as e:
+        print(f"Errore nell'inizializzazione del file JSON: {e}")
+        return {"controls": {}, "last_update": time.time()}
 
-# Modifica del contenuto HTML per utilizzare AJAX
-html_content = """
-<!DOCTYPE html>
-<html>
-<head>
-    <title>Grasshopper Interface</title>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
-    <style>
-        body { 
-            font-family: Arial, sans-serif; 
-            margin: 0;
-            display: flex;
-            flex-direction: column;
-            height: 100vh;
-        }
-        #controls { 
-            padding: 20px;
-            background-color: #f5f5f5;
-        }
-        .control { 
-            margin: 10px 0;
-            padding: 15px;
-            background-color: white;
-            border-radius: 8px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-        }
-        #viewer {
-            flex-grow: 1;
-            width: 100%;
-        }
-    </style>
-</head>
-<body>
-    <div id="controls">
-        <div class="control">
-            <label>Slider: <span id="slider-value">50</span></label>
-            <input type="range" id="slider" min="0" max="100" value="50">
-        </div>
-        <div class="control">
-            <label>Shape:</label>
-            <select id="shape-select">
-                <option value="circle">Circle</option>
-                <option value="rectangle">Rectangle</option>
-                <option value="polygon">Polygon</option>
-            </select>
-        </div>
-    </div>
-    <div id="viewer"></div>
+def get_running_instance():
+    """Recupera informazioni sull'istanza corrente del server"""
+    try:
+        if os.path.exists(INSTANCE_PATH):
+            with open(INSTANCE_PATH, 'r') as f:
+                data = json.load(f)
+                # Verifica se il server è effettivamente in esecuzione
+                try:
+                    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+                        s.settimeout(0.1)
+                        result = s.connect_ex(('127.0.0.1', data['port']))
+                        if result == 0:
+                            return data
+                except:
+                    pass
+    except:
+        pass
+    return None
 
-    <script>
-        // Inizializzazione Three.js
-        const scene = new THREE.Scene();
-        scene.background = new THREE.Color(0xf0f0f0);
-        
-        const viewer = document.getElementById('viewer');
-        const camera = new THREE.PerspectiveCamera(75, viewer.clientWidth / viewer.clientHeight, 0.1, 1000);
-        const renderer = new THREE.WebGLRenderer({ antialias: true });
-        
-        renderer.setSize(viewer.clientWidth, viewer.clientHeight);
-        viewer.appendChild(renderer.domElement);
-        
-        // Luci
-        const ambientLight = new THREE.AmbientLight(0x404040, 1);
-        scene.add(ambientLight);
-        
-        const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
-        directionalLight.position.set(1, 1, 1);
-        scene.add(directionalLight);
-        
-        const directionalLight2 = new THREE.DirectionalLight(0xffffff, 0.5);
-        directionalLight2.position.set(-1, -1, -1);
-        scene.add(directionalLight2);
-        
-        let currentMesh = null;
-        let controls = null;
-
-        // Gestione ridimensionamento
-        window.addEventListener('resize', () => {
-            const width = viewer.clientWidth;
-            const height = viewer.clientHeight;
-            camera.aspect = width / height;
-            camera.updateProjectionMatrix();
-            renderer.setSize(width, height);
-        });
-
-        function animate() {
-            requestAnimationFrame(animate);
-            if (controls) {
-                controls.update(); // Aggiorna i controlli in ogni frame
-            }
-            renderer.render(scene, camera);
-        }
-        
-        let lastGeometryUpdate = 0;
-        let geometryUpdateInterval = 500; // Aggiorna la geometria ogni 500ms
-        let isDragging = false;
-
-        // Aggiungi gestione eventi di interazione
-        function setupInteractionEvents() {
-            renderer.domElement.addEventListener('mousedown', () => {
-                isDragging = true;
-            });
-            
-            renderer.domElement.addEventListener('mouseup', () => {
-                isDragging = false;
-            });
-            
-            renderer.domElement.addEventListener('mouseleave', () => {
-                isDragging = false;
-            });
-        }
-
-        // Modifica la funzione pollGeometry
-        function pollGeometry() {
-            // Non aggiornare se l'utente sta interagendo con la vista
-            if (isDragging) return;
-            
-            // Controlla se è passato abbastanza tempo dall'ultimo aggiornamento
-            const now = Date.now();
-            if (now - lastGeometryUpdate < geometryUpdateInterval) return;
-            
-            fetch('/get_geometry')
-                .then(response => response.json())
-                .then(data => {
-                    if (data.status !== 'error') {
-                        updateGeometry(data);
-                        lastGeometryUpdate = now;
-                    }
-                });
-        }
-
-        // Modifica l'intervallo di polling
-        setInterval(pollGeometry, 100);
-
-        function updateGeometry(geometryData) {
-            // Se l'utente sta interagendo, ignora l'aggiornamento
-            if (isDragging) return;
-
-            // Salva la posizione e rotazione corrente della camera
-            const currentCameraPosition = camera.position.clone();
-            const currentCameraRotation = camera.rotation.clone();
-            
-            if (currentMesh) {
-                scene.remove(currentMesh);
-            }
-            
-            const geometry = new THREE.BufferGeometry();
-            
-            // Vertici
-            const vertices = new Float32Array(geometryData.vertices.flat());
-            geometry.setAttribute('position', new THREE.BufferAttribute(vertices, 3));
-            
-            // Facce - gestisci sia triangoli che quad
-            const indices = [];
-            geometryData.faces.forEach(face => {
-                if (face.length === 4) {
-                    indices.push(face[0], face[1], face[2]);
-                    indices.push(face[2], face[3], face[0]);
-                } else if (face.length === 3) {
-                    indices.push(...face);
-                }
-            });
-            geometry.setIndex(new THREE.BufferAttribute(new Uint16Array(indices), 1));
-            
-            // Colori
-            const colors = new Float32Array(geometryData.colors.flat());
-            geometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
-            
-            if (geometryData.normals) {
-                const normals = new Float32Array(geometryData.normals.flat());
-                geometry.setAttribute('normal', new THREE.BufferAttribute(normals, 3));
-            } else {
-                geometry.computeVertexNormals();
-            }
-            
-            const material = new THREE.MeshPhongMaterial({
-                vertexColors: true,
-                side: THREE.DoubleSide,
-                flatShading: false,
-                shininess: 30
-            });
-            
-            currentMesh = new THREE.Mesh(geometry, material);
-            
-            // Centra la geometria
-            geometry.computeBoundingSphere();
-            const center = geometry.boundingSphere.center;
-            const radius = geometry.boundingSphere.radius;
-            
-            currentMesh.position.set(-center.x, -center.y, -center.z);
-            
-            // Configura i controlli OrbitControls solo la prima volta
-            if (!controls) {
-                controls = new THREE.OrbitControls(camera, renderer.domElement);
-                controls.enableDamping = true;
-                controls.dampingFactor = 0.05;
-                controls.enableZoom = true;
-                controls.enablePan = true;
-                controls.enableRotate = true;
-                controls.minDistance = radius * 0.5;
-                controls.maxDistance = radius * 10;
-                
-                // Imposta la posizione iniziale della camera solo la prima volta
-                camera.position.set(radius * 2, radius * 2, radius * 2);
-                camera.lookAt(0, 0, 0);
-                
-                // Inizializza gli eventi di interazione
-                setupInteractionEvents();
-            } else {
-                // Ripristina la posizione e rotazione della camera
-                camera.position.copy(currentCameraPosition);
-                camera.rotation.copy(currentCameraRotation);
-            }
-            
-            scene.add(currentMesh);
-        }
-
-        // Avvia il loop di rendering
-        animate();
-        
-        function updateServer(data) {
-            fetch('/update', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify(data)
-            });
-        }
-
-        function pollUpdates() {
-            fetch('/get_values')
-                .then(response => response.json())
-                .then(data => {
-                    document.getElementById('slider').value = data.slider_value;
-                    document.getElementById('slider-value').textContent = data.slider_value;
-                    document.getElementById('shape-select').value = data.shape;
-                });
-        }
-
-        // Aggiorna i valori ogni 100ms
-        setInterval(pollUpdates, 100);
-
-        document.getElementById('slider').addEventListener('input', (e) => {
-            const value = e.target.value;
-            document.getElementById('slider-value').textContent = value;
-            updateServer({
-                slider_value: parseFloat(value),
-                shape: document.getElementById('shape-select').value
-            });
-        });
-
-        document.getElementById('shape-select').addEventListener('change', (e) => {
-            updateServer({
-                slider_value: parseFloat(document.getElementById('slider').value),
-                shape: e.target.value
-            });
-        });
-    </script>
-</body>
-</html>
-"""
+def save_instance_info(port):
+    """Salva le informazioni dell'istanza corrente"""
+    try:
+        with open(INSTANCE_PATH, 'w') as f:
+            json.dump({'port': port, 'timestamp': time.time()}, f)
+    except:
+        pass
 
 class WebInterface:
     _instance = None
@@ -299,36 +87,96 @@ class WebInterface:
             self.initialized = True
             self.app = Flask(__name__)
             self.server_thread = None
-            self.port = self.find_free_port()
+            
+            # Controlla se esiste già un'istanza attiva
+            running_instance = get_running_instance()
+            if running_instance:
+                self.port = running_instance['port']
+                # Prova a fermare il server esistente
+                try:
+                    requests.get(f'http://127.0.0.1:{self.port}/shutdown', timeout=0.2)
+                    time.sleep(0.5)
+                except:
+                    pass
+            else:
+                self.port = self.find_free_port()
+            
+            save_instance_info(self.port)
             self.setup_routes()
             init_json_file()
-            
+            self.check_server_status()
+
     def find_free_port(self):
-        """Trova una porta libera partendo da 5000"""
-        ports = range(5000, 5100)
-        for port in ports:
-            with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-                try:
-                    s.bind(('127.0.0.1', port))
-                    return port
-                except socket.error:
-                    continue
-        raise RuntimeError("Nessuna porta disponibile trovata")
+        """Trova una porta libera"""
+        for port in range(5000, 5500):
+            try:
+                with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+                    s.settimeout(0.1)
+                    result = s.connect_ex(('127.0.0.1', port))
+                    if result != 0:  # La porta è libera
+                        return port
+            except:
+                continue
+        
+        # Se non troviamo una porta nel range, lasciamo che il sistema ne assegni una
+        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+            s.bind(('127.0.0.1', 0))
+            return s.getsockname()[1]
             
     def setup_routes(self):
         @self.app.route('/')
         def index():
+            try:
+                # Legge l'HTML dal file cache
+                if os.path.exists(HTML_CACHE_PATH):
+                    with open(HTML_CACHE_PATH, 'r') as f:
+                        data = json.load(f)
+                        if data['port'] == self.port:  # Verifica che l'HTML sia per questa istanza
+                            return render_template_string(data['html'])
+            except Exception as e:
+                print(f"Errore nel caricamento dell'HTML dalla cache: {e}")
+            
+            # Fallback all'HTML originale se c'è un errore
             return render_template_string(html_content)
         
         @self.app.route('/update', methods=['POST'])
         def update():
             try:
-                data = request.json
-                data['last_update'] = time.time()
+                new_data = request.json
+                if not isinstance(new_data, dict):
+                    return jsonify({"status": "error", "message": "Invalid data format"}), 400
+
+                current_data = {"controls": {}, "last_update": time.time()}
+                
+                # Leggi i dati esistenti se il file esiste
+                if os.path.exists(JSON_PATH):
+                    try:
+                        with open(JSON_PATH, 'r') as f:
+                            content = f.read().strip()
+                            if content:
+                                current_data = json.loads(content)
+                    except json.JSONDecodeError as e:
+                        print(f"Errore nella lettura del JSON esistente: {e}")
+                        # Continua con i dati di default se c'è un errore
+                
+                # Assicurati che la struttura sia corretta
+                if not isinstance(current_data, dict):
+                    current_data = {"controls": {}, "last_update": time.time()}
+                if 'controls' not in current_data:
+                    current_data['controls'] = {}
+                    
+                # Aggiorna i controlli
+                if 'controls' in new_data:
+                    current_data['controls'].update(new_data['controls'])
+                current_data['last_update'] = time.time()
+                
+                # Salva i dati aggiornati
                 with open(JSON_PATH, 'w') as f:
-                    json.dump(data, f)
+                    json.dump(current_data, f, indent=2)  # Usa indent per una formattazione leggibile
+                    
                 return jsonify({"status": "success"})
             except Exception as e:
+                print(f"Errore nell'aggiornamento dei valori: {e}")
                 return jsonify({"status": "error", "message": str(e)}), 500
         
         @self.app.route('/get_values')
@@ -354,27 +202,83 @@ class WebInterface:
             except Exception as e:
                 return jsonify({"status": "error", "message": str(e)})
 
+        @self.app.route('/get_initial_values')
+        def get_initial_values():
+            try:
+                if os.path.exists(JSON_PATH):
+                    with open(JSON_PATH, 'r') as f:
+                        content = f.read().strip()
+                        if content:
+                            data = json.loads(content)
+                            if isinstance(data, dict) and 'controls' in data:
+                                return jsonify({"status": "success", "values": data['controls']})
+                return jsonify({"status": "success", "values": {}})
+            except Exception as e:
+                print(f"Errore nel recupero dei valori iniziali: {e}")
+                return jsonify({"status": "error", "message": str(e)}), 500
+
+        @self.app.route('/shutdown', methods=['GET'])
+        def shutdown():
+            func = request.environ.get('werkzeug.server.shutdown')
+            if func is None:
+                raise RuntimeError('Non in esecuzione con il server Werkzeug')
+            func()
+            return 'Server in chiusura...'
+
     def stop_server(self):
         """Ferma il server se è in esecuzione"""
         if self.server_thread and self.server_thread.is_alive():
-            print("Stopping existing server...")
+            print("\nChiusura server in corso...")
             try:
-                requests.get(f'http://127.0.0.1:{self.port}/shutdown')
+                requests.get(f'http://127.0.0.1:{self.port}/shutdown', timeout=0.2)
             except:
                 pass
-            self.server_thread = None
-            time.sleep(1)
             
+            # Attendiamo che il thread termini
+            self.server_thread.join(timeout=2)
+            self.server_thread = None
+            
+            # Aspettiamo che la porta si liberi
+            max_attempts = 20  # Aumentiamo il numero di tentativi
+            for _ in range(max_attempts):
+                try:
+                    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+                        s.settimeout(0.1)
+                        result = s.connect_ex(('127.0.0.1', self.port))
+                        if result != 0:  # La porta è libera
+                            print(f"Server sulla porta {self.port} chiuso.")
+                            return
+                except:
+                    pass
+                time.sleep(0.3)  # Aumentiamo il tempo di attesa tra i tentativi
+            
+            # Se non riusciamo a liberare la porta, ne troviamo una nuova
+            print(f"Impossibile liberare la porta {self.port}, cerco una nuova porta...")
+            self.port = self.find_free_port()
+            print(f"Nuova porta assegnata: {self.port}")
+
     def start_server(self):
+        """Avvia il server su una porta libera"""
         self.stop_server()
+        
+        # Verifica ulteriore che la porta sia libera
+        try:
+            with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+                s.settimeout(0.1)
+                result = s.connect_ex(('127.0.0.1', self.port))
+                if result == 0:  # La porta è ancora in uso
+                    self.port = self.find_free_port()
+                    print(f"Porta occupata, usando la nuova porta: {self.port}")
+        except:
+            pass
         
         if not self.server_thread:
             self.server_thread = threading.Thread(target=self._run_server)
             self.server_thread.daemon = True
             self.server_thread.start()
-            time.sleep(2)
-            webbrowser.open(f'http://127.0.0.1:{self.port}')
-            
+            time.sleep(1)
+            self.check_server_status()
+
     def _run_server(self):
         try:
             self.app.run(
@@ -385,6 +289,32 @@ class WebInterface:
             )
         except Exception as e:
             print(f"Errore nell'avvio del server: {e}")
+
+    def check_server_status(self):
+        """Controlla e mostra lo stato del server"""
+        active_ports = []
+        for port in range(5000, 5020):
+            try:
+                with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+                    s.settimeout(0.1)
+                    result = s.connect_ex(('127.0.0.1', port))
+                    if result == 0:
+                        active_ports.append(port)
+            except:
+                pass
+        
+        # Prepara il messaggio di stato
+        status_msg = f"\n=== STATO SERVER ===\n"
+        status_msg += f"Porta attuale: {self.port}\n"
+        
+        if len(active_ports) > 0:
+            other_ports = [p for p in active_ports if p != self.port]
+            if other_ports:
+                status_msg += f"Altre istanze attive trovate sulle porte: {other_ports}\n"
+        
+        status_msg += "==================="
+        print(status_msg)
+        return status_msg
 
 class ServerInstance:
     _instance = None
@@ -398,10 +328,18 @@ class ServerInstance:
     
     @classmethod
     def start_if_not_running(cls):
-        if not cls._is_running:
-            instance = cls.get_instance()
-            instance.start_server()
-            cls._is_running = True
+        instance = cls.get_instance()
+        
+        # Forza sempre la chiusura del server esistente
+        instance.stop_server()
+        cls._is_running = False
+        
+        # Avvia una nuova istanza
+        instance.start_server()
+        cls._is_running = True
+        
+        return instance.port
 
-# Output: nessuno necessario, il componente serve solo ad avviare il server
-ServerInstance.start_if_not_running() 
+# Output: porta del server corrente
+server_instance = ServerInstance.start_if_not_running()
+port = server_instance  # Assegna la porta restituita alla variabile di output 
