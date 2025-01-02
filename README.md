@@ -57,6 +57,11 @@ Each input component supports:
 - Python 3.x
 - Web browser with JavaScript enabled
 
+These packages are essential for:
+- Flask: Web server functionality and API endpoints
+- NumPy: Numerical operations and array handling
+- json5: Enhanced JSON processing
+
 ### Usage
 1. Add server component to your Grasshopper definition
 2. Connect desired input components
