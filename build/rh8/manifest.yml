@@ -1,0 +1,10 @@
+---
+name: ghWebUI
+version: 0.2.1+9134
+authors:
+- Graziano Enzo Marchesani
+description: A universal web interface for Grasshopper that enables interactive 3D geometry visualization and manipulation through standard web browsers. Built with Python and Three.js, it provides cross-platform compatibility between Windows and Mac operating systems.
+license: GPL 3.0
+url: https://github.com/grazianoEnzoMarchesani/grasshopperWebUI
+keywords:
+- guid:38d85b70-0057-4b41-9dda-ae3b979b7b64

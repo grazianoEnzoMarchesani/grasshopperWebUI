@@ -1,0 +1,81 @@
+{
+  "host": {
+    "name": "Rhino3D",
+    "version": "8.14.24345\u002B15002",
+    "os": "macOS",
+    "arch": "arm64"
+  },
+  "id": "38d85b70-0057-4b41-9dda-ae3b979b7b64",
+  "identity": {
+    "name": "ghWebUI",
+    "version": "0.2.1",
+    "publisher": {
+      "email": "graziano.marchesani@unicam.it",
+      "name": "Graziano Enzo Marchesani",
+      "company": "Unicam",
+      "country": "Italy",
+      "url": "https://www.grazianoenzomarchesani.xyz/"
+    },
+    "description": "A universal web interface for Grasshopper that enables interactive 3D geometry visualization and manipulation through standard web browsers. Built with Python and Three.js, it provides cross-platform compatibility between Windows and Mac operating systems.",
+    "copyright": "Copyright \u00A9 2025 Graziano Enzo Marchesani",
+    "license": "GPL 3.0",
+    "url": "https://github.com/grazianoEnzoMarchesani/grasshopperWebUI"
+  },
+  "settings": {
+    "buildPath": "build/",
+    "buildTarget": {
+      "host": {
+        "name": "Rhino3D",
+        "version": "8"
+      },
+      "title": "Rhino3D (8.*)",
+      "slug": "rh8"
+    },
+    "publishTarget": {
+      "title": "McNeel Yak Server"
+    }
+  },
+  "codes": [
+    {
+      "type": "components",
+      "id": "e749fd7f-204f-4f21-a013-cb3a0fe529e3",
+      "language": {
+        "id": "*.gh1.grasshopper",
+        "version": "1.*.*"
+      },
+      "title": "ghWebUI 0.2.gh",
+      "uri": "ghWebUI 0.2.gh",
+      "scripts": [
+        {
+          "id": "480f348e-a27f-4e20-b5c7-64970d91547d",
+          "name": " server setup",
+          "nickname": " server setup",
+          "description": "A Flask-based server implementation that manages a web interface for Grasshopper. The script handles server instance management, port allocation, and data exchange between the web interface and Grasshopper. It includes features for JSON data persistence, server status monitoring, and automatic port management. The server provides endpoints for updating control values, retrieving geometry data, and managing server lifecycle. It\u0027s designed to work within Grasshopper\u0027s single-execution context and uses temporary files for data storage. The implementation includes safeguards against multiple server instances and provides graceful shutdown capabilities.",
+          "subcat": "Default",
+          "image": {
+            "light": {
+              "type": "svg",
+              "data": "PHN2ZyB3aWR0aD0iMjQiIGhlaWdodD0iMjQiIHZlcnNpb249IjEuMSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIiB4bWxuczp4bGluaz0iaHR0cDovL3d3dy53My5vcmcvMTk5OS94bGluayIgdmlld0JveD0iMHB0IDBwdCAyNHB0IDI0cHQiIGZpbGwtZGFyaz0iI0ZGRiIgc3Ryb2tlLWRhcms9Im5vbmUiPgogIDxsaW5lIGZpbGwtZGFyaz0iI0ZGRiIgc3Ryb2tlPSIjMDAwIiBzdHJva2UtZGFyaz0iI0ZGRiIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2Utd2lkdGg9IjAuNjAwMDAwMDAwMDAwMDAwMXB0IiB4MT0iNC41IiB5MT0iMTkuNSIgeDI9IjkuNSIgeTI9IjE5LjUiIC8\u002BCiAgPGxpbmUgZmlsbC1kYXJrPSIjRkZGIiBzdHJva2U9IiMwMDAiIHN0cm9rZS1kYXJrPSIjRkZGIiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS13aWR0aD0iMC42MDAwMDAwMDAwMDAwMDAxcHQiIHgxPSI5LjUiIHkxPSIxOS41IiB4Mj0iOS41IiB5Mj0iOC41IiAvPgogIDxsaW5lIGZpbGwtZGFyaz0iI0ZGRiIgc3Ryb2tlPSIjMDAwIiBzdHJva2UtZGFyaz0iI0ZGRiIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2Utd2lkdGg9IjAuNjAwMDAwMDAwMDAwMDAwMXB0IiB4MT0iOS41IiB5MT0iOC41IiB4Mj0iMTYuNSIgeTI9IjguNSIgLz4KICA8bGluZSBmaWxsLWRhcms9IiNGRkYiIHN0cm9rZT0iIzAwMCIgc3Ryb2tlLWRhcms9IiNGRkYiIHN0cm9rZS13aWR0aD0iMC42MDAwMDAwMDAwMDAwMDAxcHQiIHgxPSIxOS41IiB5MT0iMjAuNSIgeDI9IjE5LjUiIHkyPSI4LjUiIC8\u002BCiAgPGxpbmUgZmlsbC1kYXJrPSIjRkZGIiBzdHJva2U9IiMwMDAiIHN0cm9rZS1kYXJrPSIjRkZGIiBzdHJva2UtbGluZWNhcD0ic3F1YXJlIiBzdHJva2Utd2lkdGg9IjAuNjAwMDAwMDAwMDAwMDAwMXB0IiB4MT0iMTYuNSIgeTE9IjUuNSIgeDI9IjMuNSIgeTI9IjUuNSIgLz4KPC9zdmc\u002B"
+            },
+            "dark": {
+              "type": "svg",
+              "data": "PHN2ZyB3aWR0aD0iMjQiIGhlaWdodD0iMjQiIHZlcnNpb249IjEuMSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIiB4bWxuczp4bGluaz0iaHR0cDovL3d3dy53My5vcmcvMTk5OS94bGluayIgdmlld0JveD0iMHB0IDBwdCAyNHB0IDI0cHQiIGZpbGwtZGFyaz0iI0ZGRiIgc3Ryb2tlLWRhcms9Im5vbmUiPgogIDxsaW5lIGZpbGwtZGFyaz0iI0ZGRiIgc3Ryb2tlPSIjMDAwIiBzdHJva2UtZGFyaz0iI0ZGRiIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2Utd2lkdGg9IjAuNjAwMDAwMDAwMDAwMDAwMXB0IiB4MT0iNC41IiB5MT0iMTguNSIgeDI9IjkuNSIgeTI9IjE4LjUiIC8\u002BCiAgPGxpbmUgZmlsbC1kYXJrPSIjRkZGIiBzdHJva2U9IiMwMDAiIHN0cm9rZS1kYXJrPSIjRkZGIiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS13aWR0aD0iMC42MDAwMDAwMDAwMDAwMDAxcHQiIHgxPSI5LjUiIHkxPSIxOC41IiB4Mj0iOS41IiB5Mj0iNy41IiAvPgogIDxsaW5lIGZpbGwtZGFyaz0iI0ZGRiIgc3Ryb2tlPSIjMDAwIiBzdHJva2UtZGFyaz0iI0ZGRiIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2Utd2lkdGg9IjAuNjAwMDAwMDAwMDAwMDAwMXB0IiB4MT0iOS41IiB5MT0iNy41IiB4Mj0iMTYuNSIgeTI9IjcuNSIgLz4KICA8bGluZSBmaWxsLWRhcms9IiNGRkYiIHN0cm9rZT0iIzAwMCIgc3Ryb2tlLWRhcms9IiNGRkYiIHN0cm9rZS13aWR0aD0iMC42MDAwMDAwMDAwMDAwMDAxcHQiIHgxPSIxOS41IiB5MT0iMTkuNSIgeDI9IjE5LjUiIHkyPSI3LjUiIC8\u002BCiAgPGxpbmUgZmlsbC1kYXJrPSIjRkZGIiBzdHJva2U9IiMwMDAiIHN0cm9rZS1kYXJrPSIjRkZGIiBzdHJva2UtbGluZWNhcD0ic3F1YXJlIiBzdHJva2Utd2lkdGg9IjAuNjAwMDAwMDAwMDAwMDAwMXB0IiB4MT0iMTYuNSIgeTE9IjQuNSIgeDI9IjMuNSIgeTI9IjQuNSIgLz4KPC9zdmc\u002B"
+            },
+            "rendered": {
+              "light": {
+                "bytes": "iVBORw0KGgoAAAANSUhEUgAAABgAAAAYCAYAAADgdz34AAAAAXNSR0IArs4c6QAAAERlWElmTU0AKgAAAAgAAYdpAAQAAAABAAAAGgAAAAAAA6ABAAMAAAABAAEAAKACAAQAAAABAAAAGKADAAQAAAABAAAAGAAAAADiNXWtAAAAYUlEQVRIDWNgGAXDPgQY0Xx4Go1PLNeUWIVDTx16EOHywRugxH0ckq\u002BA4t5QuVQgPRuHOrzCxMYNhjomvMZSQXLUAoKBOBpEIyCIWLD4cQdQTBhNXB6NP2BcUFk0CkgLAQCPSgf\u002B/ksrogAAAABJRU5ErkJggg==",
+                "width": 24,
+                "height": 24
+              },
+              "dark": {
+                "bytes": "iVBORw0KGgoAAAANSUhEUgAAABgAAAAYCAYAAADgdz34AAAAAXNSR0IArs4c6QAAAERlWElmTU0AKgAAAAgAAYdpAAQAAAABAAAAGgAAAAAAA6ABAAMAAAABAAEAAKACAAQAAAABAAAAGKADAAQAAAABAAAAGAAAAADiNXWtAAAAYUlEQVRIDWNgGAXDPgQY0Xx4Go1PLNeUWIVDTx16EOHywRugxH0ckq\u002BA4t5QuVQgPRuHOrzCxMYNhjomvMZSQXLUAoKBOBpEIyCIWLD4cQdQTBhNXB6NP2BcUFk0CkgLAQCPSgf\u002B/ksrogAAAABJRU5ErkJggg==",
+                "width": 24,
+                "height": 24
+              }
+            }
+          }
+        }
+      ]
+    }
+  ]
+}

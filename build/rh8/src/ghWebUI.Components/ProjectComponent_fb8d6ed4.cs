@@ -1,0 +1,88 @@
+using System;
+using SD = System.Drawing;
+using SWF = System.Windows.Forms;
+
+using Rhino.Geometry;
+
+using Grasshopper.Kernel;
+
+namespace RhinoCodePlatform.Rhino3D.Projects.Plugin.GH
+{
+  public sealed class ProjectComponent_fb8d6ed4 : ProjectComponent_Base
+  {
+    static readonly string s_scriptData = "ewogICJ0eXBlIjogInNjcmlwdCIsCiAgInNjcmlwdCI6IHsKICAgICJsYW5ndWFnZSI6IHsKICAgICAgImlkIjogIiouKi5weXRob24iLAogICAgICAidmVyc2lvbiI6ICIzLiouKiIKICAgIH0sCiAgICAidGl0bGUiOiAiYnJvd3NlciBvcGVuZXIiLAogICAgInRleHQiOiAiYVcxd2IzSjBJSGRsWW1KeWIzZHpaWElLYVcxd2IzSjBJSFJwYldVS0NpTWdTVzV3ZFhRNkNpTWdJQ0J2Y0dWdVZVazZJR0p2YjJ3Z0xTQlVjbWxuWjJWeUlIQmxjaUJoY0hKcGNtVWdhV3dnWW5KdmQzTmxjaUFvVkhKMVpTOUdZV3h6WlNrS0l5QWdJSEJ2Y25RNklHbHVkQ0F0SUZCdmNuUmhJR1JsYkNCelpYSjJaWElnS0dSbFptRjFiSFE2SURVd01EQXBDZ3BqYkdGemN5QkNjbTkzYzJWeVQzQmxibVZ5T2dvZ0lDQWdYMnhoYzNSZmIzQmxibDkwYVcxbElEMGdNQW9nSUNBZ1gyMXBibDlwYm5SbGNuWmhiQ0E5SURVZ0lDTWdTVzUwWlhKMllXeHNieUJ0YVc1cGJXOGdhVzRnYzJWamIyNWthU0IwY21FZ2JHVWdZWEJsY25SMWNtVWdaR1ZzSUdKeWIzZHpaWElLSUNBZ0lBb2dJQ0FnUUdOc1lYTnpiV1YwYUc5a0NpQWdJQ0JrWldZZ2IzQmxibDlwYm5SbGNtWmhZMlVvWTJ4ekxDQndiM0owUFRVd01EQXBPZ29nSUNBZ0lDQWdJQ0lpSWdvZ0lDQWdJQ0FnSUVGd2NtVWdiQ2RwYm5SbGNtWmhZMk5wWVNCdVpXd2dZbkp2ZDNObGNpQnpiMnh2SUhObElNT29JSEJoYzNOaGRHOGdZV0ppWVhOMFlXNTZZU0IwWlcxd2J5QmtZV3hzSjNWc2RHbHRZU0JoY0dWeWRIVnlZUW9nSUNBZ0lDQWdJRUZ5WjNNNkNpQWdJQ0FnSUNBZ0lDQWdJSEJ2Y25RZ0tHbHVkQ2s2SUZCdmNuUmhJSE4xSUdOMWFTRERxQ0JwYmlCbGMyVmpkWHBwYjI1bElHbHNJSE5sY25abGNnb2dJQ0FnSUNBZ0lDSWlJZ29nSUNBZ0lDQWdJR04xY25KbGJuUmZkR2x0WlNBOUlIUnBiV1V1ZEdsdFpTZ3BDaUFnSUNBZ0lDQWdDaUFnSUNBZ0lDQWdJeUJEYjI1MGNtOXNiR0VnYzJVZ3c2Z2djR0Z6YzJGMGJ5QmhZbUpoYzNSaGJucGhJSFJsYlhCdklHUmhiR3duZFd4MGFXMWhJR0Z3WlhKMGRYSmhDaUFnSUNBZ0lDQWdhV1lnWTNWeWNtVnVkRjkwYVcxbElDMGdZMnh6TGw5c1lYTjBYMjl3Wlc1ZmRHbHRaU0FcdTAwMkJQU0JqYkhNdVgyMXBibDlwYm5SbGNuWmhiRG9LSUNBZ0lDQWdJQ0FnSUNBZ2RYSnNJRDBnWmlkb2RIUndPaTh2TVRJM0xqQXVNQzR4T250d2IzSjBmU2NLSUNBZ0lDQWdJQ0FnSUNBZ2QyVmlZbkp2ZDNObGNpNXZjR1Z1S0hWeWJDa0tJQ0FnSUNBZ0lDQWdJQ0FnWTJ4ekxsOXNZWE4wWDI5d1pXNWZkR2x0WlNBOUlHTjFjbkpsYm5SZmRHbHRaUW9LSXlCVmRHbHNhWHA2YnlCa2FYSmxkSFJ2SUc1bGJDQmpiMjF3YjI1bGJuUmxDbWxtSUc5d1pXNVZTVG9nSUNNZ2RISnBaMmRsY2lERHFDQnNKMmx1Y0hWMElHUmxiQ0JqYjIxd2IyNWxiblJsQ2lBZ0lDQkNjbTkzYzJWeVQzQmxibVZ5TG05d1pXNWZhVzUwWlhKbVlXTmxLSEJ2Y25RcElDQWpJSEJ2Y25RZ3c2Z2diQ2RwYm5CMWRDQmtaV3dnWTI5dGNHOXVaVzUwWlE9PSIsCiAgICAiaWQiOiAiZmI4ZDZlZDQtNDE5OS00NDhmLTllOWEtZGMxNjY2YjdjZjYwIiwKICAgICJpbnB1dHMiOiBbCiAgICAgIHsKICAgICAgICAibmFtZSI6ICJwb3J0IiwKICAgICAgICAidHlwZSI6IHsKICAgICAgICAgICJuYW1lIjogIlN5c3RlbS5PYmplY3QiLAogICAgICAgICAgImFzc2VtYmx5IjogIlN5c3RlbS5Qcml2YXRlLkNvcmVMaWIiCiAgICAgICAgfSwKICAgICAgICAicHJldHR5IjogInBvcnQiLAogICAgICAgICJkZXNjIjogInJoaW5vc2NyaXB0c3ludGF4IGdlb21ldHJ5IiwKICAgICAgICAicHJldmlld3MiOiB0cnVlLAogICAgICAgICJvcHRpb25hbCI6IHRydWUKICAgICAgfSwKICAgICAgewogICAgICAgICJuYW1lIjogIm9wZW5VSSIsCiAgICAgICAgInR5cGUiOiB7CiAgICAgICAgICAibmFtZSI6ICJTeXN0ZW0uT2JqZWN0IiwKICAgICAgICAgICJhc3NlbWJseSI6ICJTeXN0ZW0uUHJpdmF0ZS5Db3JlTGliIgogICAgICAgIH0sCiAgICAgICAgInByZXR0eSI6ICJvcGVuVUkiLAogICAgICAgICJkZXNjIjogInJoaW5vc2NyaXB0c3ludGF4IGdlb21ldHJ5IiwKICAgICAgICAicHJldmlld3MiOiB0cnVlLAogICAgICAgICJvcHRpb25hbCI6IHRydWUKICAgICAgfQogICAgXSwKICAgICJuaWNrbmFtZSI6ICJicm93c2VyIG9wZW5lciIKICB9Cn0=";
+    static readonly string s_scriptIconData = "iVBORw0KGgoAAAANSUhEUgAAABgAAAAYCAYAAADgdz34AAAEsWlUWHRYTUw6Y29tLmFkb2JlLnhtcAAAAAAAPD94cGFja2V0IGJlZ2luPSLvu78iIGlkPSJXNU0wTXBDZWhpSHpyZVN6TlRjemtjOWQiPz4KPHg6eG1wbWV0YSB4bWxuczp4PSJhZG9iZTpuczptZXRhLyIgeDp4bXB0az0iWE1QIENvcmUgNS41LjAiPgogPHJkZjpSREYgeG1sbnM6cmRmPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5LzAyLzIyLXJkZi1zeW50YXgtbnMjIj4KICA8cmRmOkRlc2NyaXB0aW9uIHJkZjphYm91dD0iIgogICAgeG1sbnM6dGlmZj0iaHR0cDovL25zLmFkb2JlLmNvbS90aWZmLzEuMC8iCiAgICB4bWxuczpleGlmPSJodHRwOi8vbnMuYWRvYmUuY29tL2V4aWYvMS4wLyIKICAgIHhtbG5zOnBob3Rvc2hvcD0iaHR0cDovL25zLmFkb2JlLmNvbS9waG90b3Nob3AvMS4wLyIKICAgIHhtbG5zOnhtcD0iaHR0cDovL25zLmFkb2JlLmNvbS94YXAvMS4wLyIKICAgIHhtbG5zOnhtcE1NPSJodHRwOi8vbnMuYWRvYmUuY29tL3hhcC8xLjAvbW0vIgogICAgeG1sbnM6c3RFdnQ9Imh0dHA6Ly9ucy5hZG9iZS5jb20veGFwLzEuMC9zVHlwZS9SZXNvdXJjZUV2ZW50IyIKICAgdGlmZjpJbWFnZUxlbmd0aD0iMjQiCiAgIHRpZmY6SW1hZ2VXaWR0aD0iMjQiCiAgIHRpZmY6UmVzb2x1dGlvblVuaXQ9IjIiCiAgIHRpZmY6WFJlc29sdXRpb249IjIzLzEiCiAgIHRpZmY6WVJlc29sdXRpb249IjIzLzEiCiAgIGV4aWY6UGl4ZWxYRGltZW5zaW9uPSIyNCIKICAgZXhpZjpQaXhlbFlEaW1lbnNpb249IjI0IgogICBleGlmOkNvbG9yU3BhY2U9IjEiCiAgIHBob3Rvc2hvcDpDb2xvck1vZGU9IjMiCiAgIHBob3Rvc2hvcDpJQ0NQcm9maWxlPSJzUkdCIElFQzYxOTY2LTIuMSIKICAgeG1wOk1vZGlmeURhdGU9IjIwMjQtMDctMThUMTU6MTQ6NTAtMDc6MDAiCiAgIHhtcDpNZXRhZGF0YURhdGU9IjIwMjQtMDctMThUMTU6MTQ6NTAtMDc6MDAiPgogICA8eG1wTU06SGlzdG9yeT4KICAgIDxyZGY6U2VxPgogICAgIDxyZGY6bGkKICAgICAgc3RFdnQ6YWN0aW9uPSJwcm9kdWNlZCIKICAgICAgc3RFdnQ6c29mdHdhcmVBZ2VudD0iQWZmaW5pdHkgUGhvdG8gMiAyLjUuMiIKICAgICAgc3RFdnQ6d2hlbj0iMjAyNC0wNy0xOFQxNToxNDo1MC0wNzowMCIvPgogICAgPC9yZGY6U2VxPgogICA8L3htcE1NOkhpc3Rvcnk+CiAgPC9yZGY6RGVzY3JpcHRpb24+CiA8L3JkZjpSREY+CjwveDp4bXBtZXRhPgo8P3hwYWNrZXQgZW5kPSJyIj8+PFPNtgAAAYFpQ0NQc1JHQiBJRUM2MTk2Ni0yLjEAACiRdZG7SwNBEIc/EyWikYiKWFgEUatEokLQxiLBF6hFjGDUJrm8hDyOuwQJtoJtQEG08VXoX6CtYC0IiiKItbWijYZzLglExMwyO9/+dmfYnQVLMKWk9UYPpDM5LTDtcy6HVpy2V2x00E0r3rCiq/OLU0Hq2ucDDWa8c5u16p/711qjMV2BhmbhCUXVcsIzwnMbOdXkXeEuJRmOCp8LuzS5oPC9qUcq/GpyosLfJmvBgB8s7cLOxC+O/GIlqaWF5eX0p1N5pXof8yX2WGZpUWKfeC86Aabx4WSWSfx4GWZcZi9uRhiSFXXyPeX8BbKSq8isUkBjnQRJcrhEzUv1mMS46DEZKQpm///2VY+PjlSq233Q9GIY7wNg24FS0TC+jg2jdALWZ7jK1PKzRzD2IXqxpvUfgmMLLq5rWmQPLreh50kNa+GyZBW3xOPwdgZtIei8hZbVSs+q+5w+QnBTvuoG9g9gUM471n4AjtNn+CCeQOAAAAAJcEhZcwAAA4oAAAOKAaeM9R8AAAH2SURBVEiJ1ZU/ixpBGMZ/M86aI+RMIFuKfgu7Bb9DCCgSAlYHKdIdgTSpQgrJ1zCw/dlb+jHEMkb0skvi/EtxrsypezmXNHlh2Nl333meeWZm54H/PURJXu5a2fey8IDbtWOCbrerWq3WZ+/9lbX28hxkpdStMebbdDr9sFgsbgENoMKidrv9sdPpvB8Oh3WlFNZajDFYa7HW4pzDObfve+/3z+VyeZmm6ZskSdR4PL4G1oAOCSTwbjAY1OfzOXmeI4RASomUct8vy8VxTL/fvxiNRq+BT8AvwMqQQGv9sl6vnw1e5BqNBsaYZ8ATIAJkSAAgrbWVwIUQWGsLnGi3IiIkEADW2krgUkqMMeFy3+8UURCcCy6ECAlEKYFzrhK4lDJcIkoJDhXIo20KBh/Uaa2PatRhIlRQANRqtZOzLkhObHK5AufcEdhDCsK6UwpKCarsw6MUeO8rb3IlBeeoCY5pOQFQ+U8OCPxJAqXUZrVaVQLfbDbkeY5S6ieBH4TH1Dvnxmmavu31ehdxHOO9Z7vd7q9sYwzGGLTW996NMazXa2az2TbLshvuvMABPjQc2Ww2XyRJ8jWKole7W/HRoZTKsiy7mUwmX/I8/w78APJDS4yA58BTgiuXv1tnYZUa+A3k7Azn1MDoAPycCEk0D8zsn5n+H1yr/u4xAeJ3AAAAAElFTkSuQmCC";
+
+    public override Guid ComponentGuid { get; } = new Guid("fb8d6ed4-4199-448f-9e9a-dc1666b7cf60");
+
+    public override GH_Exposure Exposure { get; } = GH_Exposure.primary;
+
+    public override bool Obsolete { get; } = false;
+
+    public ProjectComponent_fb8d6ed4() : base(s_scriptData, s_scriptIconData,
+        name: "browser opener",
+        nickname: "browser opener",
+        description: "",
+        category: "ghWebUI",
+        subCategory: "Default"
+        )
+    {
+    }
+
+    protected override void AppendAdditionalComponentMenuItems(SWF.ToolStripDropDown menu)
+    {
+      base.AppendAdditionalComponentMenuItems(menu);
+      if (m_script is null) return;
+      m_script.AppendAdditionalMenuItems(this, menu);
+    }
+
+    protected override void RegisterInputParams(GH_InputParamManager _) { }
+
+    protected override void RegisterOutputParams(GH_OutputParamManager _) { }
+
+    protected override void BeforeSolveInstance()
+    {
+      if (m_script is null) return;
+      m_script.BeforeSolve(this);
+    }
+
+    protected override void SolveInstance(IGH_DataAccess DA)
+    {
+      if (m_script is null) return;
+      m_script.Solve(this, DA);
+    }
+
+    protected override void AfterSolveInstance()
+    {
+      if (m_script is null) return;
+      m_script.AfterSolve(this);
+    }
+
+    public override void RemovedFromDocument(GH_Document document)
+    {
+      ProjectComponentPlugin.DisposeScript(this, m_script);
+      base.RemovedFromDocument(document);
+    }
+
+    public override BoundingBox ClippingBox
+    {
+      get
+      {
+        if (m_script is null) return BoundingBox.Empty;
+        return m_script.GetClipBox(this);
+      }
+    }
+
+    public override void DrawViewportWires(IGH_PreviewArgs args)
+    {
+      if (m_script is null) return;
+      m_script.DrawWires(this, args);
+    }
+
+    public override void DrawViewportMeshes(IGH_PreviewArgs args)
+    {
+      if (m_script is null) return;
+      m_script.DrawMeshes(this, args);
+    }
+  }
+}

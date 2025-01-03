@@ -1,3 +1,6 @@
+# requirements: flask, requests
+
+
 from flask import Flask, render_template_string, jsonify, request
 import threading
 import socket
